@@ -6,8 +6,9 @@ import tensorflow as tf
 from sklearn.metrics import mean_absolute_error,mean_squared_error
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
-
+import csv
 import warnings
+import time
 warnings.filterwarnings('ignore')
 
 # 加载数据
@@ -15,7 +16,8 @@ file_train_path = r'F:\文件\PyCharmFiles\Kesci\真实业界数据的时间序�
 file_predict_path = r'F:\文件\PyCharmFiles\Kesci\真实业界数据的时间序列预测挑战\industry\industry_timeseries\timeseries_predict_data\11.csv'
 
 data_train = pd.read_csv(file_train_path,names=['年','月','日','当日最高气温','当日最低气温','当日平均气温','当日平均湿度','输出'])
-data= (data_train[:][['当日最高气温','当日最低气温','当日平均气温','当日平均湿度','输出']]).values
+data_train['输出'] = data_train['输出'].shift(-1)
+data= (data_train[0:-1][['当日最高气温','当日最低气温','当日平均气温','当日平均湿度','输出']]).values
 # 定义参数
 rnn_units = 10
 input_size = 4
@@ -89,6 +91,7 @@ def lstm(X):
 
 # 训练模型
 def train_lstm(batch_size=80,time_step=15,train_begin=0,train_end=487):
+    start_time = time.time()
     X = tf.placeholder(tf.float32,shape=[None,time_step,input_size])
     Y = tf.placeholder(tf.float32,shape=[None,time_step,output_size])
     batch_index,train_x,train_y,test_x,test_y,scaler_for_y = get_data(batch_size,time_step,train_begin,train_end)
@@ -99,7 +102,7 @@ def train_lstm(batch_size=80,time_step=15,train_begin=0,train_end=487):
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         # 训练5000
-        iter_time = 5000
+        iter_time = 1000
         for i in range(iter_time):
             for step in range(len(batch_index)-1):
                 mytest_x = train_x[batch_index[step]:batch_index[step+1]]
@@ -119,12 +122,27 @@ def train_lstm(batch_size=80,time_step=15,train_begin=0,train_end=487):
         rmse = np.sqrt(mean_squared_error(test_predict, test_y))
         mae = mean_absolute_error(y_pred=test_predict, y_true=test_y)
         print('mae:', mae, 'rmse:', rmse)
+        end_time = time.time()
+        file_name = r'F:\文件\PyCharmFiles\Kesci\真实业界数据的时间序列预测挑战\result.csv'
+        f = open(file_name, 'a', encoding='utf-8-sig')
+        writer = csv.writer(f)
+        writer.writerow([start_time,end_time,rnn_units,mae,rmse])
+        f.close()
         plt.figure(figsize=(24, 8))
         plt.plot(data[:, -1])
         plt.plot([None for _ in range(487)] + [x for x in test_predict])
         plt.show()
+
     return test_predict
 
 
-test_predict = train_lstm(batch_size=80, time_step=15, train_begin=0, train_end=487)
+# test_predict = train_lstm(batch_size=80, time_step=15, train_begin=0, train_end=487)
 
+def text(id = 1):
+    a = id*-1;
+    print(a)
+
+if __name__ == '__main__':
+    for i in range(5):
+        print(i)
+        text(i)
